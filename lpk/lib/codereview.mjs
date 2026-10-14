@@ -6,6 +6,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { git } from './git.mjs';
+import { SHELL } from './tools.mjs';
 
 // Where the `[` at `start` closes, skipping brackets inside JSON strings; -1 when it never does.
 function closing(text, start) {
@@ -37,8 +38,9 @@ export function parseFindings(text) {
 
 // One headless Claude Code run of a slash command in `cwd`: its result text, or why there is none.
 function claudeRun(cwd, prompt, model, timeoutMs) {
-  const r = spawnSync('claude', ['-p', prompt, '--model', model, '--output-format', 'json'],
-    { cwd, encoding: 'utf8', timeout: timeoutMs, maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] });
+  // On Windows claude starts through a shell, which must not see the prompt: it goes in on stdin.
+  const r = spawnSync('claude', ['-p', ...(SHELL ? [] : [prompt]), '--model', model, '--output-format', 'json'],
+    { cwd, input: SHELL ? prompt : undefined, shell: SHELL, encoding: 'utf8', timeout: timeoutMs, maxBuffer: 1 << 26, stdio: [SHELL ? 'pipe' : 'ignore', 'pipe', 'pipe'] });
   if (r.error) return { error: `claude could not run: ${r.error.code === 'ENOENT' ? 'the claude CLI is not on PATH' : r.error.message}` };
   if (r.status !== 0 && !r.stdout) return { error: `claude exited ${r.status}: ${String(r.stderr).slice(0, 300)}` };
   try { return { res: JSON.parse(r.stdout) }; } catch { return { error: 'claude output was not JSON' }; }
