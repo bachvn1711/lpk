@@ -10,6 +10,11 @@ PR body. The scope is the comments; the triage comment (step 9) is updated after
 `lpk:claims` checks the PR body against the new diff each round: fix each sentence it no longer
 backs.
 
+When you hand fixes to an agent, brief it with the exact items: the comments it fixes, the files
+and the failing test for each, and when it stops. Give it a budget of about 60 tool calls; at the
+budget it stops and reports what is fixed and what is open. To continue its work, send it a
+message (it keeps its context); a new agent has to read everything again.
+
 Then start the run (step 5, first paragraph) and run steps 6 to 9 with these inputs: the request is
 the PR's purpose plus the comments you fixed; each fixed comment is an acceptance scenario (what
 the reviewer did or pointed at, and the result they expect now); the lane is Quick unless the
